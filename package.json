@@ -1,0 +1,46 @@
+{
+    "name": "greenpaw",
+    "version": "0.1.0",
+    "description": "HTTP client with go-style errors instead of exceptions",
+    "main": "dist/index.js",
+    "type": "module",
+    "engines": {
+        "node": ">=14"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sethlivingston/greenpaw.git"
+    },
+    "keywords": [
+        "http",
+        "http-client",
+        "isomorphic",
+        "fetch",
+        "nodejs"
+    ],
+    "author": {
+        "name": "Seth Livingston",
+        "email": "webdevbyseth@gmail.com"
+    },
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/sethlivingston/greenpaw/issues"
+    },
+    "homepage": "https://github.com/sethlivingston/greenpaw#readme",
+    "files": [
+        "dist/**/*"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "build-watch": "tsc --watch",
+        "test": "echo TBD"
+    },
+    "devDependencies": {
+        "eslint": "^8.10.0",
+        "prettier": "^2.5.1",
+        "typescript": "^4.5.5"
+    },
+    "prettier": {
+        "printWidth": 80
+    }
+}
