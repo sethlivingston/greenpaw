@@ -7,9 +7,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-export function get(input, init) {
-    return request(input, Object.assign(Object.assign({}, init), { method: "GET" }));
-}
+/**
+ * Wraps the [standard fetch
+ * function](developer.mozilla.org/en-US/docs/Web/API/fetch). Returns a
+ * `[ProcessedResponse, RequestError]` tuple. Does not throw any exceptions.
+ */
 export function request(input, init) {
     return __awaiter(this, void 0, void 0, function* () {
         let resp = null;
@@ -19,33 +21,29 @@ export function request(input, init) {
         }
         catch (err) {
             // Network error
-            return [undefined, { type: "network" }];
+            return [null, { type: "network" }];
         }
+        // Read the response body if it's JSON or text
+        let json, text, readErr;
+        if (hasContent(resp)) {
+            const contentType = (resp.headers.get("content-type") || "").toLowerCase();
+            if (isJSON(contentType)) {
+                [json, readErr] = yield readJSON(resp);
+            }
+            else if (isText(contentType)) {
+                [text, readErr] = yield readText(resp);
+            }
+        }
+        // Check for HTTP error
         if (!resp.ok) {
-            // HTTP error
-            return [undefined, { type: "http", resp }];
+            return [null, { type: "http", resp, json, text }];
         }
-        const [content, err] = yield readBody(resp);
-        if (err) {
-            // Post-processing error
-            return [undefined, { type: "post", resp, error: err }];
+        // Check for post-processing error
+        if (readErr) {
+            return [null, { type: "post", resp, error: readErr }];
         }
         // Everything went fine
-        return [content, null];
-    });
-}
-export function readBody(resp) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const contentType = resp.headers.get("content-type") || "";
-        if (isJSON(contentType)) {
-            return readJSON(resp);
-        }
-        else if (isText(contentType)) {
-            return readText(resp);
-        }
-        else {
-            return readBlob(resp);
-        }
+        return [{ resp, json, text }, null];
     });
 }
 export function readJSON(resp) {
@@ -55,7 +53,7 @@ export function readJSON(resp) {
             return [content, null];
         }
         catch (err) {
-            return [undefined, err];
+            return [null, err];
         }
     });
 }
@@ -66,7 +64,7 @@ export function readText(resp) {
             return [content, null];
         }
         catch (err) {
-            return [undefined, err];
+            return [null, err];
         }
     });
 }
@@ -77,7 +75,7 @@ export function readBlob(resp) {
             return [content, null];
         }
         catch (err) {
-            return [undefined, err];
+            return [null, err];
         }
     });
 }

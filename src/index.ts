@@ -13,6 +13,8 @@ type NetworkError = {
 type HttpError = {
   type: "http";
   resp: Response;
+  json?: any | null;
+  text?: string | null;
 };
 
 /**
@@ -25,6 +27,9 @@ type PostProcessingError = {
   resp: Response;
 };
 
+/**
+ * Union of the three possible error types.
+ */
 export type RequestError = NetworkError | HttpError | PostProcessingError;
 
 /**
@@ -33,24 +38,19 @@ export type RequestError = NetworkError | HttpError | PostProcessingError;
  */
 export interface ProcessedResponse {
   resp: Response;
-  json?: any;
-  text?: string;
+  json?: any | null;
+  text?: string | null;
 }
 
-export function get<T = any>(
-  input: Request | string,
-  init?: RequestInit
-): Promise<[T | undefined, RequestError | null]> {
-  return request(input, {
-    ...init,
-    method: "GET",
-  });
-}
-
-export async function request<T = any>(
+/**
+ * Wraps the [standard fetch
+ * function](developer.mozilla.org/en-US/docs/Web/API/fetch). Returns a
+ * `[ProcessedResponse, RequestError]` tuple. Does not throw any exceptions.
+ */
+export async function request(
   input: RequestInfo,
   init?: RequestInit
-): Promise<[T | undefined, RequestError | null]> {
+): Promise<[ProcessedResponse | null, RequestError | null]> {
   let resp: Response | null = null;
 
   try {
@@ -58,67 +58,64 @@ export async function request<T = any>(
     resp = await fetch(input, init);
   } catch (err) {
     // Network error
-    return [undefined, { type: "network" }];
+    return [null, { type: "network" }];
   }
 
+  // Read the response body if it's JSON or text
+  let json, text, readErr;
+  if (hasContent(resp)) {
+    const contentType = (resp.headers.get("content-type") || "").toLowerCase();
+    if (isJSON(contentType)) {
+      [json, readErr] = await readJSON(resp);
+    } else if (isText(contentType)) {
+      [text, readErr] = await readText(resp);
+    }
+  }
+
+  // Check for HTTP error
   if (!resp.ok) {
-    // HTTP error
-    return [undefined, { type: "http", resp }];
+    return [null, { type: "http", resp, json, text }];
   }
 
-  const [content, err] = await readBody(resp);
-  if (err) {
-    // Post-processing error
-    return [undefined, { type: "post", resp, error: err }];
+  // Check for post-processing error
+  if (readErr) {
+    return [null, { type: "post", resp, error: readErr }];
   }
 
   // Everything went fine
-  return [content, null];
+  return [{ resp, json, text }, null];
 }
 
-export async function readBody(
+export async function readJSON(
   resp: Response
-): Promise<[any | undefined, Error | null]> {
-  const contentType = resp.headers.get("content-type") || "";
-  if (isJSON(contentType)) {
-    return readJSON(resp);
-  } else if (isText(contentType)) {
-    return readText(resp);
-  } else {
-    return readBlob(resp);
-  }
-}
-
-export async function readJSON<T = any>(
-  resp: Response
-): Promise<[T | undefined, Error | null]> {
+): Promise<[any | null, Error | null]> {
   try {
     const content = await resp.json();
     return [content, null];
   } catch (err) {
-    return [undefined, err as Error];
+    return [null, err as Error];
   }
 }
 
 export async function readText(
   resp: Response
-): Promise<[string | undefined, Error | null]> {
+): Promise<[string | null, Error | null]> {
   try {
     const content = await resp.text();
     return [content, null];
   } catch (err) {
-    return [undefined, err as Error];
+    return [null, err as Error];
   }
 }
 
 export async function readBlob(
   resp: Response
-): Promise<[Blob | undefined, Error | null]> {
+): Promise<[Blob | null, Error | null]> {
   try {
     const content = await resp.blob();
     return [content, null];
   } catch (err) {
-    return [undefined, err as Error];
+    return [null, err as Error];
   }
 }
 

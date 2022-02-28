@@ -45,7 +45,7 @@ Hosted:
 The `greenpaw.request` method accepts the same parameters as the [standard fetch
 function](https://developer.mozilla.org/en-US/docs/Web/API/fetch). Instead of
 returning a response or possibly throwing an exception, it returns a Go-style
-tuple `[greenpaw.Response, greenpaw.Error]`.
+tuple `[greenpaw.ProcessedResponse, greenpaw.RequestError]`.
 
 ```typescript
 // Make the request
@@ -61,11 +61,11 @@ console.log(resp.json);
 
 ### Handling errors
 
-None of the greenpaw functions throw exceptions when something goes wrong.
-Instead, they return a robust error object in the second element of the tuple,
+`greenpaw.reqeust` does not throw an exception when something goes wrong.
+Instead, it returns a robust error object in the second element of the tuple,
 `greenpaw.RequestError`. The object is a [Typescript discriminated
 union](https://www.typescriptlang.org/docs/handbook/typescript-in-5-minutes-func.html#discriminated-unions)
-of three different types of errors.
+of three different error types.
 
 ```typescript
 /**
@@ -128,9 +128,9 @@ console.log(resp.json);
 
 ### Reading responses
 
-Greenpaw automatically reads response bodies **on successful requests** if they
-are JSON or text. There is no need to call `Response.json()` or
-`Response.text()` as you normally would with the Fetch API.
+`greenpaw.request` automatically reads response bodies if they are JSON or text.
+There is no need to call `Response.json()` or `Response.text()` as you normally
+would with the Fetch API.
 
 The first element of the tuple returned by Greenpaw functions is a
 `greenpaw.ProcessedResponse` object.
@@ -147,8 +147,14 @@ export interface ProcessedResponse {
 }
 ```
 
-The examples above demonstrate how to read JSON content. Here's how to read
-text content, such as HTML and XML.
+#### Reading JSON and text data
+
+If the response has JSON content, then it will be ready in the `.json` property.
+If the response has text content, including HTML, XML, and plain text, then it
+will be ready in the `.text` property.
+
+Previous examples demonstrate how to read JSON content. Here's how to read text
+content, such as HTML and XML.
 
 ```typescript
 // Make the request
@@ -162,6 +168,31 @@ if (err) {
 console.log(resp.text);
 ```
 
+#### Reading blob data
+
+If the HTTP response has a blob instead of JSON or text, then you can use the
+`parseBlob(resp: Response): Promise<[Blob | null, Error | null]>` utility
+function to read it manually while still benefitting from Go-style error
+handling.
+
+```typescript
+// Make the request
+const [resp, err] = await request("https://httpbin.org/image/jpeg"); // <-- Note the URL
+if (err) {
+  handleError(err);
+  return;
+}
+
+// Read the image data
+const [imageBlob, err] = await readBlob(resp.resp);
+if (err) {
+  // Error reading the blob data
+  return;
+}
+
+const imageURL = URL.createObjectURL(imageBlob);
+```
+
 ### Reading HTTP error responses
 
 Sometimes HTTP error responses include JSON or text bodies. For example, a
@@ -169,37 +200,22 @@ Sometimes HTTP error responses include JSON or text bodies. For example, a
 might include a JSON response body with information the client can use to
 resolve the problem.
 
-Greenpaw will not automatically read response bodies on HTTP errors, but you
-can read them using one of the provided Go-style utility functions.
-
-- `readJSON(resp: Response): Promise<[any, Error]>`
-- `readText(resp: Response): Promise<[string, Error]>`
-- `readBlob(resp: Response): Promise<[Blob, Error]>`
+If an HTTP error response has JSON or text content, then it will be ready
+in the error object's `.json` or `.text` property.
 
 Here's an example.
 
 ```typescript
-function async handle422Error(err: RequestError) {
-  if (err.type === "http" && err.resp.statusCode === 422) {
-    const [content, readError] = await readJSON(err.resp);
-    if (readError) {
-      // Unable to read and parse the JSON
-    }
-    console.error("422 response body:", content);
-  }
-}
-
 // This URL actually returns an empty body, but let's assume it has some JSON
 // content for demonstration purposes
 const [resp, err] = await request("https://httpbin.org/status/422");
 if (err) {
-  await handle422Error(err);
+  if (err.type === "http" && err.resp.statusCode === 422) {
+    console.error("422 response body:", err.json);
+  }
   return;
 }
 ```
-
-Unlike `Response.json()` and `Response.text()`, these utility functions will
-never throw exceptions.
 
 ## API
 
@@ -213,6 +229,6 @@ Yes, please!
 
 Be sure to create an issue before you submit a change request.
 
-```
+## Credits
 
-```
+Icon by [SVG Repo](https://www.svgrepo.com/svg/251871/animal-paw)

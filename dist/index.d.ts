@@ -12,6 +12,8 @@ declare type NetworkError = {
 declare type HttpError = {
     type: "http";
     resp: Response;
+    json?: any | null;
+    text?: string | null;
 };
 /**
  * The request reached the server, the server returned a successful status code,
@@ -22,6 +24,9 @@ declare type PostProcessingError = {
     error: Error;
     resp: Response;
 };
+/**
+ * Union of the three possible error types.
+ */
 export declare type RequestError = NetworkError | HttpError | PostProcessingError;
 /**
  * Wraps the Fetch API response object with processed JSON or text content
@@ -29,14 +34,17 @@ export declare type RequestError = NetworkError | HttpError | PostProcessingErro
  */
 export interface ProcessedResponse {
     resp: Response;
-    json?: any;
-    text?: string;
+    json?: any | null;
+    text?: string | null;
 }
-export declare function get<T = any>(input: Request | string, init?: RequestInit): Promise<[T | undefined, RequestError | null]>;
-export declare function request<T = any>(input: RequestInfo, init?: RequestInit): Promise<[T | undefined, RequestError | null]>;
-export declare function readBody(resp: Response): Promise<[any | undefined, Error | null]>;
-export declare function readJSON<T = any>(resp: Response): Promise<[T | undefined, Error | null]>;
-export declare function readText(resp: Response): Promise<[string | undefined, Error | null]>;
-export declare function readBlob(resp: Response): Promise<[Blob | undefined, Error | null]>;
+/**
+ * Wraps the [standard fetch
+ * function](developer.mozilla.org/en-US/docs/Web/API/fetch). Returns a
+ * `[ProcessedResponse, RequestError]` tuple. Does not throw any exceptions.
+ */
+export declare function request(input: RequestInfo, init?: RequestInit): Promise<[ProcessedResponse | null, RequestError | null]>;
+export declare function readJSON(resp: Response): Promise<[any | null, Error | null]>;
+export declare function readText(resp: Response): Promise<[string | null, Error | null]>;
+export declare function readBlob(resp: Response): Promise<[Blob | null, Error | null]>;
 export {};
 //# sourceMappingURL=index.d.ts.map
