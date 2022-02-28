@@ -1,11 +1,11 @@
-<center>
-  <img src="./greenpaw.png" alt="green paw" width=128>
-</center>
-
-# Greenpaw HTTP Client
-
-Greenpaw is the JavaScript [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
-with [Go-style error handling](https://go.dev/blog/error-handling-and-go).
+<div style="text-align:center">
+  <div><img src="./greenpaw.png" alt="green paw" width=128></div>
+  <h1>Greenpaw HTTP Client</h1>
+  <p>
+    JavaScript <a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API" target=_blank>Fetch</a>
+    with <a href="https://go.dev/blog/error-handling-and-go" target=_blank>Go-style error handling</a>
+  <p>
+</div>
 
 ## Features
 
