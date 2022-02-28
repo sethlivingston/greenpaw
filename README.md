@@ -1,3 +1,7 @@
+<center>
+  <img src="./greenpaw.png" alt="green paw" width=128>
+</center>
+
 # Greenpaw HTTP Client
 
 Greenpaw is the JavaScript [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
