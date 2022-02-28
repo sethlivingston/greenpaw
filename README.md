@@ -1,4 +1,4 @@
-<div style="text-align:center">
+<div align="center">
   <div><img src="./greenpaw.png" alt="green paw" width=128></div>
   <h1>Greenpaw HTTP Client</h1>
   <p>
